@@ -42,7 +42,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 
     public GamePanel() {
         state = State.START;
-        dinosaur = new Dinosaur(350, 550, 60, 30, 5); // Larger size: 60x30
+        dinosaur = new Dinosaur(350, 525, 60, 30, 5); // Larger size: 60x30
         comets = new ArrayList<>();
         powerUp = null;
         score = 0;
@@ -60,14 +60,14 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 
         // Load and resize images
         try {
-            BufferedImage originalDinosaurLeft = ImageIO.read(getClass().getResource("/DinosaurLeft.png"));
-            BufferedImage originalDinosaurRight = ImageIO.read(getClass().getResource("/DinosaurRight.png"));
+            BufferedImage originalDinosaurLeft = ImageIO.read(getClass().getResource("/DinosaurLeft2.png"));
+            BufferedImage originalDinosaurRight = ImageIO.read(getClass().getResource("/DinosaurRight2.png"));
             BufferedImage originalComet = ImageIO.read(getClass().getResource("/downmeteor.png"));
             BufferedImage originalPowerUp = ImageIO.read(getClass().getResource("/PinkCandy.png"));
-            dinosaurLeftImage = resizeImage(originalDinosaurLeft, 60, 30);
-            dinosaurRightImage = resizeImage(originalDinosaurRight, 60, 30);
-            cometImage = resizeImage(originalComet, 8, 14);
-            powerUpImage = resizeImage(originalPowerUp, 20, 20);
+            dinosaurLeftImage = originalDinosaurLeft;
+            dinosaurRightImage =originalDinosaurRight;
+            cometImage = originalComet;
+            powerUpImage = originalPowerUp;
         } catch (IOException e) {
             System.err.println("Error loading images: " + e.getMessage());
             dinosaurLeftImage = null;
@@ -215,7 +215,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 
             // Spawn power-up (1% chance if none exists)
             if (powerUp == null && random.nextInt(100) < 1) {
-                powerUp = new PowerUp(random.nextInt(750), 550, 20, 20, 300);
+                powerUp = new PowerUp(random.nextInt(750), 530, 20, 20, 300);
             }
 
             // Spawn comets
@@ -246,13 +246,18 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                     int effect = random.nextInt(3);
                     if (effect == 0) {
                         activeEffect = PowerUpEffect.SPEED_BOOST;
-                        dinosaur.setSpeed(10); // Double speed
+                        score+=5;
+                        dinosaur.incSpeed(); // increase speed by 5
                     } else if (effect == 1) {
                         activeEffect = PowerUpEffect.COMET_FREEZE;
+                        score+=5;
                     } else {
                         activeEffect = PowerUpEffect.IMMUNITY;
+                        score+=5;
                     }
-                    effectTimer = 300; // 5 seconds
+                    effectTimer = 360;
+                    
+                    // 5 seconds
                     powerUp = null;
                 }
             }
@@ -307,6 +312,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     public void mouseEntered(MouseEvent e) {}
     @Override
     public void mouseExited(MouseEvent e) {}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
 }
 
 abstract class Thing {
@@ -356,6 +367,9 @@ class Dinosaur extends Thing {
 
     public void setSpeed(int speed) {
         this.speed = speed;
+    }
+    public void incSpeed() {
+    	speed+=5;
     }
 }
 
