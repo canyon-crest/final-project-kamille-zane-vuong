@@ -25,25 +25,32 @@ public class UmbrellaSaurus extends JFrame {
 
 class GamePanel extends JPanel implements ActionListener, KeyListener, MouseListener {
     private enum State { START, GAME, GAME_OVER }
+    private enum PowerUpEffect { NONE, SPEED_BOOST, COMET_FREEZE, IMMUNITY }
     private State state;
     private Dinosaur dinosaur;
     private ArrayList<Comet> comets;
+    private PowerUp powerUp;
     private Timer timer;
     private int score, lives;
     private Random random;
     private ArrayList<String> leaderboard;
     private JButton startButton, playAgainButton;
     private int frameCount;
-    private BufferedImage dinosaurImage, cometImage;
+    private BufferedImage dinosaurLeftImage, dinosaurRightImage, cometImage, powerUpImage;
+    private PowerUpEffect activeEffect;
+    private int effectTimer;
 
     public GamePanel() {
         state = State.START;
-        dinosaur = new Dinosaur(350, 550, 50, 20, 5);
+        dinosaur = new Dinosaur(350, 550, 60, 30, 5); // Larger size: 60x30
         comets = new ArrayList<>();
+        powerUp = null;
         score = 0;
         lives = 3;
         random = new Random();
         frameCount = 0;
+        activeEffect = PowerUpEffect.NONE;
+        effectTimer = 0;
         leaderboard = new ArrayList<>();
         leaderboard.add("X");
         leaderboard.add("X");
@@ -53,16 +60,20 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
 
         // Load and resize images
         try {
-            // Load original images
-            BufferedImage originalDinosaur = ImageIO.read(getClass().getResource("/DinosaurRight2.png"));
+            BufferedImage originalDinosaurLeft = ImageIO.read(getClass().getResource("/DinosaurLeft.png"));
+            BufferedImage originalDinosaurRight = ImageIO.read(getClass().getResource("/DinosaurRight.png"));
             BufferedImage originalComet = ImageIO.read(getClass().getResource("/downmeteor.png"));
-            // Resize to match game dimensions
-            dinosaurImage = resizeImage(originalDinosaur, 28, 18);
+            BufferedImage originalPowerUp = ImageIO.read(getClass().getResource("/PinkCandy.png"));
+            dinosaurLeftImage = resizeImage(originalDinosaurLeft, 60, 30);
+            dinosaurRightImage = resizeImage(originalDinosaurRight, 60, 30);
             cometImage = resizeImage(originalComet, 8, 14);
+            powerUpImage = resizeImage(originalPowerUp, 20, 20);
         } catch (IOException e) {
             System.err.println("Error loading images: " + e.getMessage());
-            dinosaurImage = null;
+            dinosaurLeftImage = null;
+            dinosaurRightImage = null;
             cometImage = null;
+            powerUpImage = null;
         }
 
         // Initialize buttons
@@ -99,6 +110,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         lives = 3;
         frameCount = 0;
         comets.clear();
+        powerUp = null;
+        activeEffect = PowerUpEffect.NONE;
+        effectTimer = 0;
+        dinosaur.setSpeed(5); // Reset speed
         startButton.setVisible(false);
         playAgainButton.setVisible(false);
         requestFocus();
@@ -135,16 +150,16 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
         if (state == State.START) {
-            // Draw start screen
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.BOLD, 30));
             g2d.drawString("UmbrellaSaurus", 300, 200);
             g2d.setFont(new Font("Arial", Font.PLAIN, 20));
             g2d.drawString("Use arrow keys to avoid comets!", 280, 250);
         } else if (state == State.GAME) {
-            // Draw dinosaur
-            if (dinosaurImage != null) {
-                g2d.drawImage(dinosaurImage, dinosaur.getX(), dinosaur.getY(), null);
+            // Draw dinosaur based on direction
+            BufferedImage dinoImage = dinosaur.isMovingLeft() ? dinosaurLeftImage : dinosaurRightImage;
+            if (dinoImage != null) {
+                g2d.drawImage(dinoImage, dinosaur.getX(), dinosaur.getY(), null);
             } else {
                 g2d.setColor(Color.BLUE);
                 g2d.fillRect(dinosaur.getX(), dinosaur.getY(), dinosaur.getWidth(), dinosaur.getHeight());
@@ -162,13 +177,20 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 }
             }
 
+            // Draw power-up
+            if (powerUp != null && powerUpImage != null) {
+                g2d.drawImage(powerUpImage, powerUp.getX(), powerUp.getY(), null);
+            } else if (powerUp != null) {
+                g2d.setColor(Color.YELLOW);
+                g2d.fillRect(powerUp.getX(), powerUp.getY(), powerUp.getWidth(), powerUp.getHeight());
+            }
+
             // Draw score and lives
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.PLAIN, 20));
             g2d.drawString("Score: " + score, 10, 20);
             g2d.drawString("Lives: " + lives, 10, 40);
         } else if (state == State.GAME_OVER) {
-            // Draw game over screen
             g2d.setColor(Color.RED);
             g2d.setFont(new Font("Arial", Font.BOLD, 30));
             g2d.drawString("YOU LOST!", 320, 200);
@@ -190,10 +212,16 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     public void actionPerformed(ActionEvent e) {
         if (state == State.GAME) {
             frameCount++;
-            // Spawn comets with increasing speed
+
+            // Spawn power-up (1% chance if none exists)
+            if (powerUp == null && random.nextInt(100) < 1) {
+                powerUp = new PowerUp(random.nextInt(750), 550, 20, 20, 300);
+            }
+
+            // Spawn comets
             if (random.nextInt(100) < 5) {
-                int cometSpeed = 3 + (frameCount / 60) / 10;
-                comets.add(new Comet(random.nextInt(750), 0, 10, 10, cometSpeed));
+                int cometSpeed = (activeEffect == PowerUpEffect.COMET_FREEZE) ? 0 : (3 + (frameCount / 60) / 10);
+                comets.add(new Comet(random.nextInt(750), 0, 8, 14, cometSpeed));
             }
 
             // Update comets
@@ -203,9 +231,38 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 if (comet.getY() > getHeight()) {
                     comets.remove(i);
                     score++;
-                } else if (dinosaur.getBounds().intersects(comet.getBounds())) {
+                } else if (dinosaur.getBounds().intersects(comet.getBounds()) && activeEffect != PowerUpEffect.IMMUNITY) {
                     comets.remove(i);
                     lives--;
+                }
+            }
+
+            // Update power-up
+            if (powerUp != null) {
+                powerUp.update();
+                if (powerUp.isExpired()) {
+                    powerUp = null;
+                } else if (dinosaur.getBounds().intersects(powerUp.getBounds())) {
+                    int effect = random.nextInt(3);
+                    if (effect == 0) {
+                        activeEffect = PowerUpEffect.SPEED_BOOST;
+                        dinosaur.setSpeed(10); // Double speed
+                    } else if (effect == 1) {
+                        activeEffect = PowerUpEffect.COMET_FREEZE;
+                    } else {
+                        activeEffect = PowerUpEffect.IMMUNITY;
+                    }
+                    effectTimer = 300; // 5 seconds
+                    powerUp = null;
+                }
+            }
+
+            // Update effect timer
+            if (effectTimer > 0) {
+                effectTimer--;
+                if (effectTimer <= 0) {
+                    activeEffect = PowerUpEffect.NONE;
+                    dinosaur.setSpeed(5); // Reset speed
                 }
             }
 
@@ -223,18 +280,22 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     public void keyPressed(KeyEvent e) {
         if (state == State.GAME) {
             if (e.getKeyCode() == KeyEvent.VK_LEFT && dinosaur.getX() > 0) {
-                dinosaur.moveLeft();
+                dinosaur.moveLeft(true);
             }
             if (e.getKeyCode() == KeyEvent.VK_RIGHT && dinosaur.getX() < getWidth() - dinosaur.getWidth()) {
-                dinosaur.moveRight();
+                dinosaur.moveRight(false);
             }
         }
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {}
-    @Override
-    public void keyReleased(KeyEvent e) {}
+    public void keyReleased(KeyEvent e) {
+        if (state == State.GAME) {
+            if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                dinosaur.stopMoving();
+            }
+        }
+    }
 
     @Override
     public void mouseClicked(MouseEvent e) {}
@@ -267,14 +328,35 @@ abstract class Thing {
 
 class Dinosaur extends Thing {
     private int speed;
+    private boolean movingLeft;
 
     public Dinosaur(int x, int y, int width, int height, int speed) {
         super(x, y, width, height);
         this.speed = speed;
+        this.movingLeft = false;
     }
 
-    public void moveLeft() { x -= speed; }
-    public void moveRight() { x += speed; }
+    public void moveLeft(boolean left) {
+        x -= speed;
+        movingLeft = left;
+    }
+
+    public void moveRight(boolean left) {
+        x += speed;
+        movingLeft = left;
+    }
+
+    public void stopMoving() {
+        movingLeft = false;
+    }
+
+    public boolean isMovingLeft() {
+        return movingLeft;
+    }
+
+    public void setSpeed(int speed) {
+        this.speed = speed;
+    }
 }
 
 class Comet extends Thing {
@@ -285,5 +367,24 @@ class Comet extends Thing {
         this.speed = speed;
     }
 
-    public void update() { y += speed; }
+    public void update() {
+        y += speed;
+    }
+}
+
+class PowerUp extends Thing {
+    private int timer;
+
+    public PowerUp(int x, int y, int width, int height, int duration) {
+        super(x, y, width, height);
+        this.timer = duration;
+    }
+
+    public void update() {
+        timer--;
+    }
+
+    public boolean isExpired() {
+        return timer <= 0;
+    }
 }
