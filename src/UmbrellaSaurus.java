@@ -36,7 +36,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     private ArrayList<String> leaderboard;
     private JButton startButton, playAgainButton;
     private int frameCount;
-    private BufferedImage dinosaurLeftImage, dinosaurRightImage, cometImage, powerUpImage;
+    private BufferedImage dinosaurLeftImage, dinosaurRightImage, cometImage, powerUpImage, backgroundImage;
     private PowerUpEffect activeEffect;
     private int effectTimer;
 
@@ -64,16 +64,19 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             BufferedImage originalDinosaurRight = ImageIO.read(getClass().getResource("/DinosaurRight2.png"));
             BufferedImage originalComet = ImageIO.read(getClass().getResource("/downmeteor.png"));
             BufferedImage originalPowerUp = ImageIO.read(getClass().getResource("/PinkCandy.png"));
+            BufferedImage originalBackground=ImageIO.read(getClass().getResource("/backgroundgame.png"));
             dinosaurLeftImage = originalDinosaurLeft;
             dinosaurRightImage =originalDinosaurRight;
             cometImage = originalComet;
             powerUpImage = originalPowerUp;
+            backgroundImage=originalBackground;
         } catch (IOException e) {
             System.err.println("Error loading images: " + e.getMessage());
             dinosaurLeftImage = null;
             dinosaurRightImage = null;
             cometImage = null;
             powerUpImage = null;
+            backgroundImage=null;
         }
 
         // Initialize buttons
@@ -146,7 +149,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         Graphics2D g2d = (Graphics2D) g;
 
         // Draw background
-        g2d.setColor(Color.BLUE);
+        g2d.drawImage(backgroundImage, 100 ,100, null);
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
         if (state == State.START) {
@@ -246,6 +249,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                     int effect = random.nextInt(3);
                     if (effect == 0) {
                         activeEffect = PowerUpEffect.SPEED_BOOST;
+                      
                         score+=5;
                         dinosaur.incSpeed(); // increase speed by 5
                     } else if (effect == 1) {
