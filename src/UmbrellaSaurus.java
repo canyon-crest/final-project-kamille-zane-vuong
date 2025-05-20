@@ -75,8 +75,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             BufferedImage originalCometLeft = ImageIO.read(getClass().getResource("/MetorLeft.png"));
             BufferedImage originalCometRight = ImageIO.read(getClass().getResource("/MeteorRight.png"));
             BufferedImage originalPowerUpImmunity = ImageIO.read(getClass().getResource("/PinkCandy.png"));
-            BufferedImage originalPowerUpFreeze = ImageIO.read(getClass().getResource("/YellowCandy.png"));
-            BufferedImage originalPowerUpSpeed = ImageIO.read(getClass().getResource("/BlueCandy.png"));
+            BufferedImage originalPowerUpFreeze = ImageIO.read(getClass().getResource("/BlueCandy.png"));
+            BufferedImage originalPowerUpSpeed = ImageIO.read(getClass().getResource("/YellowCandy.png"));
             BufferedImage originalBackground = ImageIO.read(getClass().getResource("/backgroundgame.png"));
 
             if (originalDinosaurLeft == null) throw new IOException("DinosaurLeft2.png not found");
@@ -466,8 +466,8 @@ class Comet extends Thing {
 
     public void update() {
         y += speed;
-        if (direction == 1) x -= 1; // Slightly left
-        else if (direction == 2) x += 1; // Slightly right
+        if (direction == 1) x -= 0.5*speed; // Slightly left
+        else if (direction == 2) x += 0.5*speed; // Slightly right
     }
 
     public int getDirection() {
