@@ -38,7 +38,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     private ArrayList<String> leaderboard;
     private JButton startButton, playAgainButton;
     private int frameCount;
-    private BufferedImage dinosaurLeftImage, dinosaurRightImage, backgroundImage;
+    private BufferedImage dinosaurLeftImage, dinosaurRightImage, backgroundImage, heartImage;
     private BufferedImage cometDownImage, cometLeftImage, cometRightImage;
     private BufferedImage powerUpImmunityImage, powerUpFreezeImage, powerUpSpeedImage;
     private PowerUpEffect activeEffect;
@@ -78,6 +78,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             BufferedImage originalPowerUpFreeze = ImageIO.read(getClass().getResource("/BlueCandy.png"));
             BufferedImage originalPowerUpSpeed = ImageIO.read(getClass().getResource("/YellowCandy.png"));
             BufferedImage originalBackground = ImageIO.read(getClass().getResource("/backgroundgame.png"));
+            BufferedImage originalHeart= ImageIO.read(getClass().getResource("/Heart.png"));
 
             if (originalDinosaurLeft == null) throw new IOException("DinosaurLeft2.png not found");
             if (originalDinosaurRight == null) throw new IOException("DinosaurRight2.png not found");
@@ -88,6 +89,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             if (originalPowerUpFreeze == null) throw new IOException("YellowCandy.png not found");
             if (originalPowerUpSpeed == null) throw new IOException("BlueCandy.png not found");
             if (originalBackground == null) throw new IOException("backgroundgame.png not found");
+            if (originalHeart == null) throw new IOException("Heart.png not found");
 
             dinosaurLeftImage = originalDinosaurLeft;
             dinosaurRightImage = originalDinosaurRight;
@@ -98,6 +100,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             powerUpFreezeImage = originalPowerUpFreeze;
             powerUpSpeedImage = originalPowerUpSpeed;
             backgroundImage = originalBackground; // No resize for background
+            heartImage= originalHeart;
         } catch (IOException e) {
             System.err.println("Error loading images: " + e.getMessage());
             dinosaurLeftImage = null;
