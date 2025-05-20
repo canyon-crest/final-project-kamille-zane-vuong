@@ -89,14 +89,14 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             if (originalPowerUpSpeed == null) throw new IOException("BlueCandy.png not found");
             if (originalBackground == null) throw new IOException("backgroundgame.png not found");
 
-            dinosaurLeftImage = resizeImage(originalDinosaurLeft, 60, 30);
-            dinosaurRightImage = resizeImage(originalDinosaurRight, 60, 30);
-            cometDownImage = resizeImage(originalCometDown, 8, 14);
-            cometLeftImage = resizeImage(originalCometLeft, 8, 14);
-            cometRightImage = resizeImage(originalCometRight, 8, 14);
-            powerUpImmunityImage = resizeImage(originalPowerUpImmunity, 20, 20);
-            powerUpFreezeImage = resizeImage(originalPowerUpFreeze, 20, 20);
-            powerUpSpeedImage = resizeImage(originalPowerUpSpeed, 20, 20);
+            dinosaurLeftImage = originalDinosaurLeft;
+            dinosaurRightImage = originalDinosaurRight;
+            cometDownImage =originalCometDown;
+            cometLeftImage =originalCometLeft;
+            cometRightImage = originalCometRight;
+            powerUpImmunityImage = originalPowerUpImmunity;
+            powerUpFreezeImage = originalPowerUpFreeze;
+            powerUpSpeedImage = originalPowerUpSpeed;
             backgroundImage = originalBackground; // No resize for background
         } catch (IOException e) {
             System.err.println("Error loading images: " + e.getMessage());
@@ -387,7 +387,7 @@ class Dinosaur extends Thing {
     private int velocityY = 0;
     private boolean jumping = false;
     private final int GRAVITY = 1;
-    private final int JUMP_STRENGTH = -30;
+    private final int JUMP_STRENGTH = -15;
     private final int GROUND_Y = 530; // Adjust as needed
 
     public Dinosaur(int x, int y, int width, int height, int speed) {
@@ -445,6 +445,7 @@ class Dinosaur extends Thing {
             y = GROUND_Y;
             velocityY = 0;
             jumping = false;
+            
         }
     }
 
