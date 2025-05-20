@@ -16,6 +16,8 @@ public class UmbrellaSaurus extends JFrame {
         setLocationRelativeTo(null);
         add(new GamePanel());
         setVisible(true);
+        setFocusable(true);
+       
     }
 
     public static void main(String[] args) {
@@ -39,6 +41,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     private BufferedImage dinosaurLeftImage, dinosaurRightImage, cometImage, powerUpImage, backgroundImage;
     private PowerUpEffect activeEffect;
     private int effectTimer;
+    Rectangle platform = new Rectangle(300, 500, 100, 10);
+    
 
     public GamePanel() {
         state = State.START;
@@ -57,6 +61,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         leaderboard.add("X");
         timer = new Timer(16, this); // ~60 FPS
         timer.start();
+        setFocusable(true);
+        requestFocusInWindow(); 
 
         // Load and resize images
         try {
@@ -149,8 +155,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         Graphics2D g2d = (Graphics2D) g;
 
         // Draw background
-        g2d.drawImage(backgroundImage, 100 ,100, null);
-        g2d.fillRect(0, 0, getWidth(), getHeight());
+        g2d.drawImage(backgroundImage, 0 ,0, null);
+        
 
         if (state == State.START) {
             g2d.setColor(Color.WHITE);
@@ -159,6 +165,9 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             g2d.setFont(new Font("Arial", Font.PLAIN, 20));
             g2d.drawString("Use arrow keys to avoid comets!", 280, 250);
         } else if (state == State.GAME) {
+        	g2d.setColor(Color.ORANGE);
+        	
+        	g2d.fillRect(platform.x, platform.y, platform.width, platform.height);
             // Draw dinosaur based on direction
             BufferedImage dinoImage = dinosaur.isMovingLeft() ? dinosaurLeftImage : dinosaurRightImage;
             if (dinoImage != null) {
@@ -215,6 +224,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     public void actionPerformed(ActionEvent e) {
         if (state == State.GAME) {
             frameCount++;
+            dinosaur.updatePosition(platform);
+           
 
             // Spawn power-up (1% chance if none exists)
             if (powerUp == null && random.nextInt(100) < 1) {
@@ -295,6 +306,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 dinosaur.moveRight(false);
             }
         }
+        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+            dinosaur.jump();
+        }
+
     }
 
     @Override
@@ -344,6 +359,11 @@ abstract class Thing {
 class Dinosaur extends Thing {
     private int speed;
     private boolean movingLeft;
+    private int velocityY = 0;
+    private boolean jumping = false;
+    private final int GRAVITY = 1;
+    private final int JUMP_STRENGTH = -30;
+    private final int GROUND_Y = 530; // Adjust as needed
 
     public Dinosaur(int x, int y, int width, int height, int speed) {
         super(x, y, width, height);
@@ -374,6 +394,38 @@ class Dinosaur extends Thing {
     }
     public void incSpeed() {
     	speed+=5;
+    }
+    public void jump() {
+        if (!jumping) {
+            velocityY = JUMP_STRENGTH;
+            jumping = true;
+        }
+        
+    }
+
+    public void updatePosition(Rectangle platform) {
+        y += velocityY;
+        velocityY += GRAVITY;
+
+        // Land on platform
+        if (y + height >= platform.y && y + height <= platform.y + 10 &&
+            x + width > platform.x && x < platform.x + platform.width &&
+            velocityY >= 0) {
+            y = platform.y - height;
+            velocityY = 0;
+            jumping = false;
+        }
+
+        // Land on ground
+        if (y >= GROUND_Y) {
+            y = GROUND_Y;
+            velocityY = 0;
+            jumping = false;
+        }
+    }
+
+    public boolean isJumping() {
+        return jumping;
     }
 }
 
