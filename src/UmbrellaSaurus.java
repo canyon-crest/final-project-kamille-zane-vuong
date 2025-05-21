@@ -7,6 +7,7 @@ import javax.imageio.ImageIO;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
+import javax.sound.sampled.*; // Added for sound effects
 
 // Move PowerUpEffect enum to file level
 enum PowerUpEffect { NONE, SPEED_BOOST, COMET_FREEZE, IMMUNITY }
@@ -43,13 +44,16 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     private BufferedImage powerUpImmunityImage, powerUpFreezeImage, powerUpSpeedImage;
     private PowerUpEffect activeEffect;
     private int effectTimer;
-    Rectangle platform = new Rectangle(300, 500, 100, 10);
+    private Rectangle platform = new Rectangle(300, 500, 100, 10);
+    private Rectangle platform1= new Rectangle (250, 400, 100, 10);
+    // Sound clips
+    private Clip jumpSound, clickSound, gameOverSound, lifeLostSound;
 
     private enum State { START, GAME, GAME_OVER }
 
     public GamePanel() {
         state = State.START;
-        dinosaur = new Dinosaur(350, 525, 60, 30, 5); // Larger size: 60x30
+        dinosaur = new Dinosaur(350, 525, 60, 30, 5);
         comets = new ArrayList<>();
         powerUp = null;
         score = 0;
@@ -62,12 +66,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         leaderboard.add("X");
         leaderboard.add("X");
         leaderboard.add("X");
-        timer = new Timer(16, this); // ~60 FPS
+        timer = new Timer(16, this);
         timer.start();
         setFocusable(true);
         requestFocusInWindow();
 
-        // Load and resize images with fallback
+        // Load images
         try {
             BufferedImage originalDinosaurLeft = ImageIO.read(getClass().getResource("/DinosaurLeft2.png"));
             BufferedImage originalDinosaurRight = ImageIO.read(getClass().getResource("/DinosaurRight2.png"));
@@ -78,7 +82,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             BufferedImage originalPowerUpFreeze = ImageIO.read(getClass().getResource("/BlueCandy.png"));
             BufferedImage originalPowerUpSpeed = ImageIO.read(getClass().getResource("/YellowCandy.png"));
             BufferedImage originalBackground = ImageIO.read(getClass().getResource("/backgroundgame.png"));
-            BufferedImage originalHeart= ImageIO.read(getClass().getResource("/Heart.png"));
+            BufferedImage originalHeart = ImageIO.read(getClass().getResource("/Heart.png")); // Updated to heart.png
 
             if (originalDinosaurLeft == null) throw new IOException("DinosaurLeft2.png not found");
             if (originalDinosaurRight == null) throw new IOException("DinosaurRight2.png not found");
@@ -86,21 +90,21 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             if (originalCometLeft == null) throw new IOException("MeteorLeft.png not found");
             if (originalCometRight == null) throw new IOException("MeteorRight.png not found");
             if (originalPowerUpImmunity == null) throw new IOException("PinkCandy.png not found");
-            if (originalPowerUpFreeze == null) throw new IOException("YellowCandy.png not found");
-            if (originalPowerUpSpeed == null) throw new IOException("BlueCandy.png not found");
+            if (originalPowerUpFreeze == null) throw new IOException("BlueCandy.png not found");
+            if (originalPowerUpSpeed == null) throw new IOException("YellowCandy.png not found");
             if (originalBackground == null) throw new IOException("backgroundgame.png not found");
-            if (originalHeart == null) throw new IOException("Heart.png not found");
+            if (originalHeart == null) throw new IOException("heart.png not found");
 
             dinosaurLeftImage = originalDinosaurLeft;
             dinosaurRightImage = originalDinosaurRight;
-            cometDownImage =originalCometDown;
-            cometLeftImage =originalCometLeft;
+            cometDownImage = originalCometDown;
+            cometLeftImage = originalCometLeft;
             cometRightImage = originalCometRight;
             powerUpImmunityImage = originalPowerUpImmunity;
             powerUpFreezeImage = originalPowerUpFreeze;
             powerUpSpeedImage = originalPowerUpSpeed;
-            backgroundImage = originalBackground; // No resize for background
-            heartImage= originalHeart;
+            backgroundImage = originalBackground;
+            heartImage = resizeImage(originalHeart, 20, 20); // Resize heart to 20x20
         } catch (IOException e) {
             System.err.println("Error loading images: " + e.getMessage());
             dinosaurLeftImage = null;
@@ -112,24 +116,62 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             powerUpFreezeImage = null;
             powerUpSpeedImage = null;
             backgroundImage = null;
+            heartImage = null;
+        }
+
+        // Load sound effects
+        try {
+            jumpSound = loadSound("/jump.wav");
+            clickSound = loadSound("/click.wav");
+            gameOverSound = loadSound("/youLost.wav");
+            lifeLostSound = loadSound("/liveLost.wav");
+        } catch (Exception e) {
+            System.err.println("Error loading sounds: " + e.getMessage());
+            jumpSound = null;
+            clickSound = null;
+            gameOverSound = null;
+            lifeLostSound = null;
         }
 
         // Initialize buttons
         setLayout(null);
         startButton = new JButton("Start");
         startButton.setBounds(350, 400, 100, 40);
-        startButton.addActionListener(e -> startGame());
+        startButton.addActionListener(e -> {
+            playSound(clickSound);
+            startGame();
+        });
         add(startButton);
 
         playAgainButton = new JButton("Play Again");
         playAgainButton.setBounds(350, 400, 100, 40);
-        playAgainButton.addActionListener(e -> restartGame());
+        playAgainButton.addActionListener(e -> {
+            playSound(clickSound);
+            restartGame();
+        });
         add(playAgainButton);
         playAgainButton.setVisible(false);
 
         setFocusable(true);
         addKeyListener(this);
         addMouseListener(this);
+    }
+
+    // Helper method to load sound clips
+    private Clip loadSound(String path) throws Exception {
+        AudioInputStream audioInput = AudioSystem.getAudioInputStream(getClass().getResource(path));
+        Clip clip = AudioSystem.getClip();
+        clip.open(audioInput);
+        return clip;
+    }
+
+    // Helper method to play sound clips
+    private void playSound(Clip clip) {
+        if (clip != null) {
+            clip.stop(); // Stop if already playing
+            clip.setFramePosition(0); // Rewind to start
+            clip.start();
+        }
     }
 
     private BufferedImage resizeImage(BufferedImage original, int targetWidth, int targetHeight) {
@@ -151,7 +193,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         powerUp = null;
         activeEffect = PowerUpEffect.NONE;
         effectTimer = 0;
-        dinosaur.setSpeed(5); // Reset speed
+        dinosaur.setSpeed(5);
         startButton.setVisible(false);
         playAgainButton.setVisible(false);
         requestFocus();
@@ -199,8 +241,9 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         } else if (state == State.GAME) {
             g2d.setColor(Color.ORANGE);
             g2d.fillRect(platform.x, platform.y, platform.width, platform.height);
+            g2d.fillRect(platform1.x, platform1.y, platform1.width, platform1.height);
 
-            // Draw dinosaur based on direction
+            // Draw dinosaur
             BufferedImage dinoImage = dinosaur.isMovingLeft() ? dinosaurLeftImage : dinosaurRightImage;
             if (dinoImage != null) {
                 g2d.drawImage(dinoImage, dinosaur.getX(), dinosaur.getY(), null);
@@ -213,7 +256,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             if (cometDownImage != null && cometLeftImage != null && cometRightImage != null) {
                 for (Comet comet : comets) {
                     BufferedImage cometImg = comet.getDirection() == 0 ? cometDownImage :
-                                          comet.getDirection() == 1 ? cometLeftImage : cometRightImage;
+                            comet.getDirection() == 1 ? cometLeftImage : cometRightImage;
                     g2d.drawImage(cometImg, comet.getX(), comet.getY(), null);
                 }
             } else {
@@ -226,8 +269,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             // Draw power-up
             if (powerUp != null) {
                 BufferedImage powerUpImg = powerUp.getEffect() == PowerUpEffect.IMMUNITY ? powerUpImmunityImage :
-                                        powerUp.getEffect() == PowerUpEffect.COMET_FREEZE ? powerUpFreezeImage :
-                                        powerUpSpeedImage;
+                        powerUp.getEffect() == PowerUpEffect.COMET_FREEZE ? powerUpFreezeImage :
+                                powerUpSpeedImage;
                 if (powerUpImg != null) {
                     g2d.drawImage(powerUpImg, powerUp.getX(), powerUp.getY(), null);
                 } else {
@@ -236,11 +279,22 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 }
             }
 
-            // Draw score and lives
+            // Draw score
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.PLAIN, 20));
             g2d.drawString("Score: " + score, 10, 20);
-            g2d.drawString("Lives: " + lives, 10, 40);
+
+            // Draw lives as heart images around (100, 100)
+            if (heartImage != null) {
+                for (int i = 0; i < lives; i++) {
+                    g2d.drawImage(heartImage, 100 + i * 30, 100, null); // Spaced 30 pixels apart
+                }
+            } else {
+                g2d.setColor(Color.RED);
+                for (int i = 0; i < lives; i++) {
+                    g2d.fillOval(100 + i * 30, 100, 20, 20);
+                }
+            }
         } else if (state == State.GAME_OVER) {
             g2d.setColor(Color.RED);
             g2d.setFont(new Font("Arial", Font.BOLD, 30));
@@ -263,18 +317,19 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     public void actionPerformed(ActionEvent e) {
         if (state == State.GAME) {
             frameCount++;
-            dinosaur.updatePosition(platform);
+            dinosaur.updatePosition(platform, platform1);
+            //dinosaur.updatePosition(platform1);
 
-            // Spawn power-up (1% chance if none exists)
+            // Spawn power-up
             if (powerUp == null && random.nextInt(100) < 1) {
-                PowerUpEffect effect = PowerUpEffect.values()[random.nextInt(3) + 1]; // Random effect (1-3)
+                PowerUpEffect effect = PowerUpEffect.values()[random.nextInt(3) + 1];
                 powerUp = new PowerUp(random.nextInt(750), 530, 20, 20, 360, effect);
             }
 
-            // Spawn comets with random direction
+            // Spawn comets
             if (random.nextInt(100) < 5) {
                 int cometSpeed = (activeEffect == PowerUpEffect.COMET_FREEZE) ? 0 : (3 + (frameCount / 60) / 10);
-                int direction = random.nextInt(3); // 0: down, 1: left, 2: right
+                int direction = random.nextInt(3);
                 comets.add(new Comet(random.nextInt(750), 0, 8, 14, cometSpeed, direction));
             }
 
@@ -288,6 +343,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 } else if (dinosaur.getBounds().intersects(comet.getBounds()) && activeEffect != PowerUpEffect.IMMUNITY) {
                     comets.remove(i);
                     lives--;
+                    playSound(lifeLostSound); // Play life lost sound
+                    if (lives <= 0) {
+                        playSound(gameOverSound); // Play game over sound
+                    }
                 }
             }
 
@@ -299,14 +358,14 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 } else if (dinosaur.getBounds().intersects(powerUp.getBounds())) {
                     activeEffect = powerUp.getEffect();
                     if (activeEffect == PowerUpEffect.SPEED_BOOST) {
-                        dinosaur.incSpeed(); // Increase speed by 5
+                        dinosaur.incSpeed();
                         score += 5;
                     } else if (activeEffect == PowerUpEffect.COMET_FREEZE) {
                         score += 5;
                     } else if (activeEffect == PowerUpEffect.IMMUNITY) {
                         score += 5;
                     }
-                    effectTimer = 360; // 6 seconds
+                    effectTimer = 360;
                     powerUp = null;
                 }
             }
@@ -316,7 +375,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 effectTimer--;
                 if (effectTimer <= 0) {
                     activeEffect = PowerUpEffect.NONE;
-                    dinosaur.setSpeed(5); // Reset speed
+                    dinosaur.setSpeed(5);
                 }
             }
 
@@ -340,6 +399,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             }
             if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                 dinosaur.jump();
+                playSound(jumpSound); // Play jump sound
             }
         }
     }
@@ -391,7 +451,7 @@ class Dinosaur extends Thing {
     private boolean jumping = false;
     private final int GRAVITY = 1;
     private final int JUMP_STRENGTH = -15;
-    private final int GROUND_Y = 530; // Adjust as needed
+    private final int GROUND_Y = 530;
 
     public Dinosaur(int x, int y, int width, int height, int speed) {
         super(x, y, width, height);
@@ -432,23 +492,27 @@ class Dinosaur extends Thing {
         }
     }
 
-    public void updatePosition(Rectangle platform) {
+    public void updatePosition(Rectangle platform, Rectangle platform1) {
         y += velocityY;
         velocityY += GRAVITY;
-        // Land on platform
         if (y + height >= platform.y && y + height <= platform.y + 10 &&
-            x + width > platform.x && x < platform.x + platform.width &&
-            velocityY >= 0) {
+                x + width > platform.x && x < platform.x + platform.width &&
+                velocityY >= 0) {
             y = platform.y - height;
             velocityY = 0;
             jumping = false;
         }
-        // Land on ground
+        if (y + height >= platform1.y && y + height <= platform1.y + 10 &&
+                x + width > platform1.x && x < platform1.x + platform1.width &&
+                velocityY >= 0) {
+            y = platform1.y - height;
+            velocityY = 0;
+            jumping = false;
+        }
         if (y >= GROUND_Y) {
             y = GROUND_Y;
             velocityY = 0;
             jumping = false;
-            
         }
     }
 
@@ -459,7 +523,7 @@ class Dinosaur extends Thing {
 
 class Comet extends Thing {
     private int speed;
-    private int direction; // 0: down, 1: left, 2: right
+    private int direction;
 
     public Comet(int x, int y, int width, int height, int speed, int direction) {
         super(x, y, width, height);
@@ -469,8 +533,8 @@ class Comet extends Thing {
 
     public void update() {
         y += speed;
-        if (direction == 1) x -= 0.5*speed; // Slightly left
-        else if (direction == 2) x += 0.5*speed; // Slightly right
+        if (direction == 1) x -= 0.5 * speed;
+        else if (direction == 2) x += 0.5 * speed;
     }
 
     public int getDirection() {
