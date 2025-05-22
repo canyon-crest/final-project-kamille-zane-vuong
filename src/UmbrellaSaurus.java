@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Random;
 import javax.sound.sampled.*; // Added for sound effects
 
@@ -44,8 +45,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     private BufferedImage powerUpImmunityImage, powerUpFreezeImage, powerUpSpeedImage;
     private PowerUpEffect activeEffect;
     private int effectTimer;
+    private Umbrella umbrella;
+    
     private Rectangle platform = new Rectangle(300, 500, 100, 10);
-    private Rectangle platform1= new Rectangle (250, 400, 100, 10);
+    private Rectangle platform1= new Rectangle (205, 400, 100, 10);
+    private Rectangle platform2= new Rectangle(110,500,100,10);
+    private Rectangle platform3= new Rectangle (15, 400,100,10);
     // Sound clips
     private Clip jumpSound, clickSound, gameOverSound, lifeLostSound;
 
@@ -62,6 +67,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
         frameCount = 0;
         activeEffect = PowerUpEffect.NONE;
         effectTimer = 0;
+        umbrella = new Umbrella();
         leaderboard = new ArrayList<>();
         leaderboard.add("X");
         leaderboard.add("X");
@@ -224,6 +230,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
+        if (umbrella.isActive()) {
+            g.setColor(Color.CYAN);
+            g.fillRect(dinosaur.x + 10, dinosaur.y - umbrella.getHeight(), umbrella.getWidth(), umbrella.getHeight());
+        }
         // Draw background
         if (backgroundImage != null) {
             g2d.drawImage(backgroundImage, 0, 0, null);
@@ -242,6 +252,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             g2d.setColor(Color.ORANGE);
             g2d.fillRect(platform.x, platform.y, platform.width, platform.height);
             g2d.fillRect(platform1.x, platform1.y, platform1.width, platform1.height);
+            g2d.fillRect(platform2.x, platform2.y, platform2.width, platform2.height);
+            g2d.fillRect(platform3.x, platform3.y, platform3.width, platform3.height);
 
             // Draw dinosaur
             BufferedImage dinoImage = dinosaur.isMovingLeft() ? dinosaurLeftImage : dinosaurRightImage;
@@ -317,15 +329,58 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     public void actionPerformed(ActionEvent e) {
         if (state == State.GAME) {
             frameCount++;
-            dinosaur.updatePosition(platform, platform1);
-            //dinosaur.updatePosition(platform1);
+            dinosaur.updatePosition(platform, platform1, platform2, platform3);
+          
 
             // Spawn power-up
             if (powerUp == null && random.nextInt(100) < 1) {
                 PowerUpEffect effect = PowerUpEffect.values()[random.nextInt(3) + 1];
-                powerUp = new PowerUp(random.nextInt(750), 530, 20, 20, 360, effect);
-            }
 
+                // Choose a random platform (platform or platform1)
+                Rectangle[] platforms = { platform, platform1,platform2,platform3 };
+                Rectangle chosenPlatform = platforms[random.nextInt(platforms.length)];
+
+                // Ensure power-up is within platform bounds
+                int powerUpWidth = 20;
+                int powerUpHeight = 20;
+                int minX = chosenPlatform.x;
+                int maxX = chosenPlatform.x + chosenPlatform.width - powerUpWidth;
+                int x = random.nextInt(maxX - minX + 1) + minX;
+                int y = chosenPlatform.y - 2*powerUpHeight; // Place it on top of the platform
+
+                powerUp = new PowerUp(x, y, powerUpWidth, powerUpHeight, 360, effect);
+                
+            }
+            if (umbrella.isActive()) {
+                int umbrellaX = dinosaur.x + 10;
+                int umbrellaY = dinosaur.y - umbrella.getHeight();
+                int umbrellaW = umbrella.getWidth();
+                int umbrellaH = umbrella.getHeight();
+
+                for (int i = 0; i < comets.size(); i++) {
+                    Comet comet = comets.get(i);
+
+                    int cometX = comet.x;
+                    int cometY = comet.y;
+                    int cometW = comet.width;
+                    int cometH = comet.height;
+
+                    boolean xOverlap = cometX < umbrellaX + umbrellaW && cometX + cometW > umbrellaX;
+                    boolean yOverlap = cometY < umbrellaY + umbrellaH && cometY + cometH > umbrellaY;
+
+                    if (xOverlap && yOverlap) {
+                        // Break the comet
+                        comets.remove(i);
+                        System.out.print("comet BLOCKED");
+                        i--; // Important to avoid skipping next comet
+                    }
+                }
+
+                // Optional: auto-disable after 2 seconds
+                if (System.currentTimeMillis() - umbrella.lastUsedTime > 1000) {
+                    umbrella.deactivate();
+                }
+            }
             // Spawn comets
             if (random.nextInt(100) < 5) {
                 int cometSpeed = (activeEffect == PowerUpEffect.COMET_FREEZE) ? 0 : (3 + (frameCount / 60) / 10);
@@ -400,6 +455,9 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                 dinosaur.jump();
                 playSound(jumpSound); // Play jump sound
+            }
+            if (e.getKeyCode() == KeyEvent.VK_UP) {
+                umbrella.activate();
             }
         }
     }
@@ -492,7 +550,7 @@ class Dinosaur extends Thing {
         }
     }
 
-    public void updatePosition(Rectangle platform, Rectangle platform1) {
+    public void updatePosition(Rectangle platform, Rectangle platform1, Rectangle platform2, Rectangle platform3) {
         y += velocityY;
         velocityY += GRAVITY;
         if (y + height >= platform.y && y + height <= platform.y + 10 &&
@@ -506,6 +564,20 @@ class Dinosaur extends Thing {
                 x + width > platform1.x && x < platform1.x + platform1.width &&
                 velocityY >= 0) {
             y = platform1.y - height;
+            velocityY = 0;
+            jumping = false;
+        }
+        if (y + height >= platform2.y && y + height <= platform2.y + 10 &&
+                x + width > platform2.x && x < platform2.x + platform2.width &&
+                velocityY >= 0) {
+            y = platform2.y - height;
+            velocityY = 0;
+            jumping = false;
+        }
+        if (y + height >= platform3.y && y + height <= platform3.y + 10 &&
+                x + width > platform3.x && x < platform3.x + platform3.width &&
+                velocityY >= 0) {
+            y = platform3.y - height;
             velocityY = 0;
             jumping = false;
         }
@@ -556,11 +628,13 @@ class PowerUp extends Thing {
         timer--;
     }
 
-    public boolean isExpired() {
-        return timer <= 0;
-    }
+   
 
     public PowerUpEffect getEffect() {
         return effect;
     }
+    public boolean isExpired() {
+    	return timer <= 0;
+    }
 }
+
