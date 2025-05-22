@@ -14,6 +14,7 @@ public class Umbrella {
 	    }
 
 	    public boolean isReady() {
+	    	
 	        return System.currentTimeMillis() - lastUsedTime >= cooldown;
 	    }
 
@@ -21,6 +22,7 @@ public class Umbrella {
 	        if (isReady()) {
 	            active = true;
 	            lastUsedTime = System.currentTimeMillis();
+	            
 	        }
 	    }
 

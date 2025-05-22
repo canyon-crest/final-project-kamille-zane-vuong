@@ -29,6 +29,8 @@ public class UmbrellaSaurus extends JFrame {
     }
 }
 
+
+
 class GamePanel extends JPanel implements ActionListener, KeyListener, MouseListener {
     private State state;
     private Dinosaur dinosaur;
@@ -40,7 +42,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     private ArrayList<String> leaderboard;
     private JButton startButton, playAgainButton;
     private int frameCount;
-    private BufferedImage dinosaurLeftImage, dinosaurRightImage, backgroundImage, heartImage;
+    private BufferedImage dinosaurLeftImage, dinosaurRightImage, backgroundImage, heartImage, umbrellaImage;
     private BufferedImage cometDownImage, cometLeftImage, cometRightImage;
     private BufferedImage powerUpImmunityImage, powerUpFreezeImage, powerUpSpeedImage;
     private PowerUpEffect activeEffect;
@@ -88,7 +90,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             BufferedImage originalPowerUpFreeze = ImageIO.read(getClass().getResource("/BlueCandy.png"));
             BufferedImage originalPowerUpSpeed = ImageIO.read(getClass().getResource("/YellowCandy.png"));
             BufferedImage originalBackground = ImageIO.read(getClass().getResource("/backgroundgame.png"));
-            BufferedImage originalHeart = ImageIO.read(getClass().getResource("/Heart.png")); // Updated to heart.png
+            BufferedImage originalHeart = ImageIO.read(getClass().getResource("/Heart.png")); 
+            BufferedImage originalUmbrella=ImageIO.read(getClass().getResource("/Umbrella.png"));
 
             if (originalDinosaurLeft == null) throw new IOException("DinosaurLeft2.png not found");
             if (originalDinosaurRight == null) throw new IOException("DinosaurRight2.png not found");
@@ -100,6 +103,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             if (originalPowerUpSpeed == null) throw new IOException("YellowCandy.png not found");
             if (originalBackground == null) throw new IOException("backgroundgame.png not found");
             if (originalHeart == null) throw new IOException("heart.png not found");
+            if (originalUmbrella==null)throw new IOException("umbrella.png not found");
 
             dinosaurLeftImage = originalDinosaurLeft;
             dinosaurRightImage = originalDinosaurRight;
@@ -110,7 +114,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             powerUpFreezeImage = originalPowerUpFreeze;
             powerUpSpeedImage = originalPowerUpSpeed;
             backgroundImage = originalBackground;
-            heartImage = resizeImage(originalHeart, 20, 20); // Resize heart to 20x20
+            heartImage = originalHeart;
+            umbrellaImage=originalUmbrella;
         } catch (IOException e) {
             System.err.println("Error loading images: " + e.getMessage());
             dinosaurLeftImage = null;
@@ -123,6 +128,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             powerUpSpeedImage = null;
             backgroundImage = null;
             heartImage = null;
+            umbrellaImage=null;
         }
 
         // Load sound effects
@@ -230,10 +236,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        if (umbrella.isActive()) {
-            g.setColor(Color.CYAN);
-            g.fillRect(dinosaur.x + 10, dinosaur.y - umbrella.getHeight(), umbrella.getWidth(), umbrella.getHeight());
-        }
+        
         // Draw background
         if (backgroundImage != null) {
             g2d.drawImage(backgroundImage, 0, 0, null);
@@ -263,6 +266,9 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 g2d.setColor(Color.BLUE);
                 g2d.fillRect(dinosaur.getX(), dinosaur.getY(), dinosaur.getWidth(), dinosaur.getHeight());
             }
+            if (umbrella.isActive()) {
+                g2d.drawImage(umbrellaImage,dinosaur.getX()+25, dinosaur.getY()-30, null);
+            }
 
             // Draw comets
             if (cometDownImage != null && cometLeftImage != null && cometRightImage != null) {
@@ -290,7 +296,21 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                     g2d.fillRect(powerUp.getX(), powerUp.getY(), powerUp.getWidth(), powerUp.getHeight());
                 }
             }
-
+            g2d.setFont(new Font("Arial", Font.PLAIN,18));
+            g2d.setColor(Color.WHITE);
+            if (umbrella.isReady()) {
+            	g2d.drawString("Umbrella is Ready![UP]", getWidth()-200, 40);
+            }
+            if(activeEffect == PowerUpEffect.COMET_FREEZE) {
+            	g2d.drawString("Comets are frozen!", getWidth()-180,90);
+            }
+            else if(activeEffect==PowerUpEffect.IMMUNITY) {
+            	g2d.drawString("You're immune to damage!", getWidth()-225,90);
+            }
+            else if (activeEffect==PowerUpEffect.SPEED_BOOST){
+            	g2d.drawString("Speed BOOST!", getWidth()-150, 90);
+            }
+            
             // Draw score
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.PLAIN, 20));
@@ -351,7 +371,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 powerUp = new PowerUp(x, y, powerUpWidth, powerUpHeight, 360, effect);
                 
             }
-            if (umbrella.isActive()) {
+           if (umbrella.isActive()) {
                 int umbrellaX = dinosaur.x + 10;
                 int umbrellaY = dinosaur.y - umbrella.getHeight();
                 int umbrellaW = umbrella.getWidth();
@@ -376,11 +396,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                     }
                 }
 
-                // Optional: auto-disable after 2 seconds
+                // Optional: auto-disable after 1 sec
                 if (System.currentTimeMillis() - umbrella.lastUsedTime > 1000) {
                     umbrella.deactivate();
                 }
             }
+            
             // Spawn comets
             if (random.nextInt(100) < 5) {
                 int cometSpeed = (activeEffect == PowerUpEffect.COMET_FREEZE) ? 0 : (3 + (frameCount / 60) / 10);
@@ -419,6 +440,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                         score += 5;
                     } else if (activeEffect == PowerUpEffect.IMMUNITY) {
                         score += 5;
+                        
                     }
                     effectTimer = 360;
                     powerUp = null;
@@ -430,7 +452,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 effectTimer--;
                 if (effectTimer <= 0) {
                     activeEffect = PowerUpEffect.NONE;
-                    dinosaur.setSpeed(5);
+                    
                 }
             }
 
@@ -456,6 +478,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
                 dinosaur.jump();
                 playSound(jumpSound); // Play jump sound
             }
+        
             if (e.getKeyCode() == KeyEvent.VK_UP) {
                 umbrella.activate();
             }
@@ -463,6 +486,8 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     @Override
+    
+    
     public void keyReleased(KeyEvent e) {
         if (state == State.GAME) {
             if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
@@ -637,4 +662,3 @@ class PowerUp extends Thing {
     	return timer <= 0;
     }
 }
-
