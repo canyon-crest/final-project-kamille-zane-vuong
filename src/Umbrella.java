@@ -16,13 +16,13 @@ public class Umbrella {
 	    public boolean isReady() {
 	    	
 	        return System.currentTimeMillis() - lastUsedTime >= cooldown;
-	    }
+	    }//checks if umbrella cooldown is ready
 
 	    public void activate() {
 	        if (isReady()) {
 	            active = true;
 	            lastUsedTime = System.currentTimeMillis();
-	            
+	            //makes it active and resets cooldown
 	        }
 	    }
 
