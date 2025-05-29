@@ -19,9 +19,8 @@ Special features:
 - Leaderboard updates with each game played
 - Umbrella functions to block incoming projectiles and keep you safe from harm
 
-Important Links:
-UML Diagram: https://lucid.app/lucidchart/7fcb08d9-a85b-4536-a5d1-c32b2be2edbd/edit?viewport_loc=-1119%2C-223%2C4130%2C2001%2CHWEp-vi-RSFO&invitationId=inv_295fc8f7-6df5-45fe-926c-3e6f65b027b7
-sources used:https://www3.ntu.edu.sg/home/ehchua/programming/java/J8c_PlayingSound.html, https://www.geeksforgeeks.org/introduction-to-java-swing/ 
+sources used:https://www3.ntu.edu.sg/home/ehchua/programming/java/J8c_PlayingSound.html, 
+https://www.geeksforgeeks.org/introduction-to-java-swing/ 
 
 Extra Reflection:
 This game, while simple was a ton of fun to make. It is startlingly easy to make a challenging and fun game for people to enjoy. This project really taught us new things in the ballpark of displaying complex actions through java swing, how to use sound in our production to make it better and more entertaining, and the importance of classes and inheritance on the development side of things. 10/10 project, would reccomend this class just for people to do this.
