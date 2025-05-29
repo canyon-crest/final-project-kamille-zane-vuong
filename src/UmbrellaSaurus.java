@@ -34,7 +34,7 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     private State state; //changes if in menu screen or in game
     private Dinosaur dinosaur;//player
     private ArrayList<Comet> comets;//all comets on screen
-    private PowerUp powerUp; //powerups duh
+    private PowerUp powerUp; //powerups 
     private Timer timer;//keeps track of time
     private int score, lives;//score increments if meteor hits ground, lives are set to 3 and decrement when hit
     private Random random;
@@ -179,6 +179,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     // helper method to load sound clips
+    /**
+     * Loads a sound clip from the given resource path.
+     * @param path the path to the sound file
+     * @return the loaded Clip
+     * @throws Exception if loading fails
+     */
     private Clip loadSound(String path) throws Exception {
         AudioInputStream audioInput = AudioSystem.getAudioInputStream(getClass().getResource(path));
         Clip clip = AudioSystem.getClip();
@@ -187,6 +193,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     // helper method to play those sounds
+    /**
+     * Plays the given sound clip from the beginning.
+     * @param clip the clip to play
+     */
     private void playSound(Clip clip) {
         if (clip != null) {
             clip.stop(); // Stop if already playing
@@ -232,7 +242,11 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
+    /**
+     * Renders all game elements on the screen.
+     * @param g the Graphics object used for rendering
+     */
+    public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
         
@@ -342,7 +356,12 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
             drawLeaderboard(g2d, 300, 300);
         }
     }
-
+    /**
+     * Draws the leaderboard to the screen.
+     * @param g2d the graphics context
+     * @param x the x position to start drawing
+     * @param y the y position to start drawing
+     */
     private void drawLeaderboard(Graphics2D g2d, int x, int y) {//leaderboard draw tool
         g2d.setFont(new Font("Arial", Font.PLAIN, 20));
         g2d.drawString("Leaderboard:", x, y);
@@ -352,6 +371,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     @Override
+    /**
+     * Updates game state each frame, including movement, collisions, and spawning.
+     * @param e the action event triggered by the timer
+     */
     public void actionPerformed(ActionEvent e) {
         if (state == State.GAME) {
             frameCount++;
@@ -472,6 +495,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     @Override
+    /**
+     * Handles key presses for movement, jumping, and umbrella activation.
+     * @param e the key event
+     */
     public void keyPressed(KeyEvent e) {//keybinds to move and use umbrella
         if (state == State.GAME) {
             if (e.getKeyCode() == KeyEvent.VK_LEFT && dinosaur.getX() > 0) {
@@ -492,8 +519,10 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     @Override
-    
-    
+    /**
+     * Handles key releases to stop movement.
+     * @param e the key event
+     */
     public void keyReleased(KeyEvent e) {//stops moving if not inputting movement keys
         if (state == State.GAME) {
             if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
@@ -503,22 +532,69 @@ class GamePanel extends JPanel implements ActionListener, KeyListener, MouseList
     }
 
     @Override
+
+    /**
+     * Handles mouse clicked events.
+     * @param e the mouse event
+     */
     public void mouseClicked(MouseEvent e) {}
     @Override
+    /**
+     * Handles mouse pressed event.
+     * @param e the mouse event
+     */
     public void mousePressed(MouseEvent e) {}
     @Override
+    /**
+     * Handles mouse released events.
+     * @param e the mouse event
+     */
     public void mouseReleased(MouseEvent e) {}
     @Override
+    /**
+     * Handles mouse entered events.
+     * @param e the mouse event
+     */
     public void mouseEntered(MouseEvent e) {}
     @Override
+    /**
+     * Handles mouse exited events.
+     * @param e the mouse event
+     */
     public void mouseExited(MouseEvent e) {}
     @Override
+    /**
+     * Handles key typed events for movement.
+     * @param e the key event
+     */
     public void keyTyped(KeyEvent e) {}
 }
 
-abstract class Thing {//  class in which meteors and dinosaurs are made to keep track of their position
-    protected int x, y, width, height;
+/**
+ * An abstract base class representing a general object in the game world with position and size.
+ * Extended by game elements  Dinosaur, Comet, and PowerUp.
+ */
+abstract class Thing {
+    /** The x-coordinate of the object. */
+    protected int x;
+    
+    /** The y-coordinate of the object. */
+    protected int y;
+    
+    /** The width of the object. */
+    protected int width;
+    
+    /** The height of the object. */
+    protected int height;
 
+    /**
+     * Constructs a Thing with the specified position and dimensions.
+     *
+     * @param x the horizontal position of the object
+     * @param y the vertical position of the object
+     * @param width the width of the object in pixels
+     * @param height the height of the object in pixels
+     */
     public Thing(int x, int y, int width, int height) {
         this.x = x;
         this.y = y;
@@ -526,61 +602,149 @@ abstract class Thing {//  class in which meteors and dinosaurs are made to keep 
         this.height = height;
     }
 
-    public int getX() { return x; }
-    public int getY() { return y; }
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
-    public Rectangle getBounds() { return new Rectangle(x, y, width, height); }
+    /**
+     * Gets the x-coordinate of the object.
+     *
+     * @return the x position
+     */
+    public int getX() {
+        return x;
+    }
+
+    /**
+     * Gets the y-coordinate of the object.
+     *
+     * @return the y position
+     */
+    public int getY() {
+        return y;
+    }
+
+    /**
+     * Gets the width of the object.
+     *
+     * @return the width
+     */
+    public int getWidth() {
+        return width;
+    }
+
+    /**
+     * Gets the height of the object.
+     *
+     * @return the height
+     */
+    public int getHeight() {
+        return height;
+    }
+
+    /**
+     * Returns a Rectangle representing the object's bounding box.
+     * Used for collision detection.
+     *
+     * @return a Rectangle with this object's position and size
+     */
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, width, height);
+    }
 }
 
+
+/**
+ * Represents the player-controlled dinosaur character.
+ * Handles movement, jumping, and collisions with platforms.
+ */
 class Dinosaur extends Thing {
     private int speed;
     private boolean movingLeft;
     private int velocityY = 0;
     private boolean jumping = false;
     private final int GRAVITY = 1;
-    private final int JUMP_STRENGTH = -15;//jump power
+    private final int JUMP_STRENGTH = -15;
     private final int GROUND_Y = 530;
 
+    /**
+     * Constructs a new Dinosaur object.
+     *
+     * @param x the x position of the dinosaur
+     * @param y the y position of the dinosaur
+     * @param width the width of the dinosaur
+     * @param height the height of the dinosaur
+     * @param speed the movement speed of the dinosaur
+     */
     public Dinosaur(int x, int y, int width, int height, int speed) {
         super(x, y, width, height);
         this.speed = speed;
         this.movingLeft = false;
     }
 
-    public void moveLeft(boolean left) {//movement methods
+    /**
+     * Moves the dinosaur to the left.
+     *
+     * @param left true if the dinosaur is moving left
+     */
+    public void moveLeft(boolean left) {
         x -= speed;
         movingLeft = left;
     }
 
+    /**
+     * Moves the dinosaur to the right.
+     *
+     * @param left true if the dinosaur is moving left
+     */
     public void moveRight(boolean left) {
         x += speed;
         movingLeft = left;
     }
 
+    /**
+     * Stops horizontal movement.
+     */
     public void stopMoving() {
         movingLeft = false;
     }
 
+    /**
+     * Returns whether the dinosaur is moving left.
+     *
+     * @return true if moving left, false otherwise
+     */
     public boolean isMovingLeft() {
         return movingLeft;
     }
 
-    public void setSpeed(int speed) {//used to reset speed
+    /**
+     * Sets the movement speed.
+     *
+     * @param speed the new speed value
+     */
+    public void setSpeed(int speed) {
         this.speed = speed;
     }
 
-    public void incSpeed() {//used when speed powerup picked up to increase speed permanently
+    /**
+     * Increases the speed of the dinosaur (typically used by power-ups).
+     */
+    public void incSpeed() {
         speed += 5;
     }
 
-    public void jump() {// sends the player upwards
+    /**
+     * Makes the dinosaur jump if not already jumping.
+     */
+    public void jump() {
         if (!jumping) {
             velocityY = JUMP_STRENGTH;
             jumping = true;
         }
     }
 //checks if player is on top of any platform
+    /**
+     * Updates the vertical position and handles collisions with platforms.
+     *
+     * @param platforms 1-7 
+     */
     public void updatePosition(Rectangle platform, Rectangle platform1, Rectangle platform2, Rectangle platform3, Rectangle platform4, Rectangle platform5, Rectangle platform6, Rectangle platform7) {
         y += velocityY;
         velocityY += GRAVITY;
@@ -646,7 +810,11 @@ class Dinosaur extends Thing {
             jumping = false;
         }
     }
-
+    /**
+     * Returns whether the dinosaur is currently jumping.
+     *
+     * @return true if jumping, false otherwise
+     */
     public boolean isJumping() {
         return jumping;
     }
@@ -655,44 +823,87 @@ class Dinosaur extends Thing {
 class Comet extends Thing {
     private int speed;
     private int direction;
-
+    /**
+     * Constructs a Comet.
+     *
+     * @param x the x position
+     * @param y the y position
+     * @param width the width of the comet
+     * @param height the height of the comet
+     * @param speed the speed of the comet
+     * @param direction the direction (0 = down, 1 = left-down, 2 = right-down)
+     */
     public Comet(int x, int y, int width, int height, int speed, int direction) {
         super(x, y, width, height);
         this.speed = speed;
         this.direction = direction;
     }
 
+    /**
+     * Updates the comet's position.
+     */
     public void update() {
         y += speed;
         if (direction == 1) x -= 0.5 * speed;
         else if (direction == 2) x += 0.5 * speed;
     }
 
+    /**
+     * Returns the comet's direction.
+     *
+     * @return the direction value
+     */
     public int getDirection() {
         return direction;
     }
 }
 
-class PowerUp extends Thing {//have a timer to despawn and a specific effect bound to them
+/**
+ * Represents a collectible power-up in the game.
+ * Applies a temporary effect to the player.
+ */
+class PowerUp extends Thing {
     private int timer;
     private PowerUpEffect effect;
 
+    /**
+     * Constructs a PowerUp.
+     *
+     * @param x the x position
+     * @param y the y position
+     * @param width the width of the power-up
+     * @param height the height of the power-up
+     * @param duration the duration in frames
+     * @param effect the effect type
+     */
     public PowerUp(int x, int y, int width, int height, int duration, PowerUpEffect effect) {
         super(x, y, width, height);
         this.timer = duration;
         this.effect = effect;
     }
 
+    /**
+     * Updates the power-up timer.
+     */
     public void update() {
         timer--;
     }
 
-   
+    /**
+     * Returns whether the power-up has expired.
+     *
+     * @return true if expired, false otherwise
+     */
+    public boolean isExpired() {
+        return timer <= 0;
+    }
 
+    /**
+     * Returns the effect type of the power-up.
+     *
+     * @return the power-up effect
+     */
     public PowerUpEffect getEffect() {
         return effect;
-    }
-    public boolean isExpired() {
-    	return timer <= 0;
     }
 }
