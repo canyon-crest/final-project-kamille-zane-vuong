@@ -21,7 +21,6 @@ Special features:
 
 Important Links:
 UML Diagram: https://lucid.app/lucidchart/7fcb08d9-a85b-4536-a5d1-c32b2be2edbd/edit?viewport_loc=-1119%2C-223%2C4130%2C2001%2CHWEp-vi-RSFO&invitationId=inv_295fc8f7-6df5-45fe-926c-3e6f65b027b7
-Video: https://youtu.be/UE26rXm_prM
 sources used:https://www3.ntu.edu.sg/home/ehchua/programming/java/J8c_PlayingSound.html, https://www.geeksforgeeks.org/introduction-to-java-swing/ 
 
 Extra Reflection:
